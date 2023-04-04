@@ -7,3 +7,5 @@ access_account_tax_change_invoice,account.tax.change,model_account_tax_change,ac
 access_account_tax_change_line_invoice,account.tax.change.line,model_account_tax_change_line,account.group_account_invoice,1,0,0,0
 access_account_tax_change_manager,account.tax.change,model_account_tax_change,account.group_account_manager,1,1,1,1
 access_account_tax_change_line_manager,account.tax.change.line,model_account_tax_change_line,account.group_account_manager,1,1,1,1
+access_account_move_apply_tax_change_invoice,account.move.apply.tax.change,model_account_move_apply_tax_change,account.group_account_invoice,1,1,1,1
+access_account_move_apply_tax_change_manager,account.move.apply.tax.change.manager,model_account_move_apply_tax_change,account.group_account_manager,1,1,1,1
