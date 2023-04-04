@@ -13,6 +13,7 @@
     "data": [
         "security/ir.model.access.csv",
         "views/account_tax_change.xml",
+        "wizards/account_move_apply_tax_change.xml",
     ],
     "installable": True,
     "development_status": "Beta",
