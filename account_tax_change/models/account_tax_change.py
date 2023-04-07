@@ -16,7 +16,7 @@ class AccountTaxChange(models.Model):
         string="Company",
         required=True,
         readonly=True,
-        default=lambda self: self.env.company,
+        default=lambda self: self.env.user.company_id,
     )
     change_line_ids = fields.One2many(
         comodel_name="account.tax.change.line",
@@ -36,7 +36,6 @@ class AccountTaxChange(models.Model):
 class AccountTaxChangeLine(models.Model):
     _name = "account.tax.change.line"
     _description = "Tax change mapping line"
-    _check_company_auto = True
 
     tax_change_id = fields.Many2one(
         comodel_name="account.tax.change",
@@ -50,7 +49,6 @@ class AccountTaxChangeLine(models.Model):
         ondelete="cascade",
         string="From tax",
         required=True,
-        check_company=True,
         index=True,
     )
     type_tax_use = fields.Selection(
@@ -61,6 +59,4 @@ class AccountTaxChangeLine(models.Model):
         ondelete="cascade",
         string="To tax",
         required=True,
-        check_company=True,
-        domain="[('id', '!=', tax_src_id), ('type_tax_use', '=', type_tax_use)]",
     )
