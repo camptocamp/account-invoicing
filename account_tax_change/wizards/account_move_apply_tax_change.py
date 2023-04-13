@@ -1,7 +1,8 @@
 # Copyright 2023 Camptocamp SA
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl)
 
-from odoo import api, fields, models
+from odoo import _, api, fields, models
+from odoo.exceptions import UserError
 
 
 class AccountMoveApplyTaxChange(models.TransientModel):
@@ -15,14 +16,8 @@ class AccountMoveApplyTaxChange(models.TransientModel):
         active_model = self.env.context.get("active_model")
         if active_model == "account.move":
             invoice_ids = self.env.context.get("active_ids")
-            invoices = self.env[active_model].search(
-                [
-                    ("id", "in", invoice_ids),
-                    ("state", "=", "draft"),
-                    ("payment_state", "=", "not_paid"),
-                ]
-            )
-            res["invoice_ids"] = [(6, 0, invoices.ids)]
+            self._check_invoices(invoice_ids)
+            res["invoice_ids"] = [(6, 0, invoice_ids)]
         return res
 
     company_id = fields.Many2one(
@@ -47,10 +42,30 @@ class AccountMoveApplyTaxChange(models.TransientModel):
         check_company=True,
     )
 
+    def _check_invoices(self, invoice_ids):
+        invoices = self.env["account.move"].search(
+            [
+                ("id", "in", invoice_ids),
+                "|",
+                ("state", "!=", "draft"),
+                ("payment_state", "!=", "not_paid"),
+            ]
+        )
+        if invoices:
+            raise UserError(
+                _(
+                    "Unable to update taxes on the following invoices:\n\n- "
+                    + "\n- ".join(invoices.mapped("name"))
+                    + "\n\nThese invoices could be already paid, posted or "
+                    "cancelled."
+                )
+            )
+
     def validate(self):
         """Apply the tax changes on the selected invoices."""
         self.ensure_one()
         src_taxes = self.tax_change_id.change_line_ids.tax_src_id
+        self._check_invoices(self.invoice_ids.ids)
         for invoice in self.invoice_ids:
             if self._skip_invoice(invoice):
                 continue
@@ -71,14 +86,10 @@ class AccountMoveApplyTaxChange(models.TransientModel):
         return invoice.state == "posted" or invoice.payment_state == "paid"
 
     def _skip_line(self, line):
-        """No tax change on line if the invoice date doesn't match.
+        """Return `True` if the tax change should be applied on the line.
 
         Other modules could override this method.
         """
-        return (
-            not line.move_id.invoice_date
-            or line.move_id.invoice_date < self.tax_change_id.date
-        )
 
     def _change_taxes(self, line):
         """Apply the tax change in the invoice line.

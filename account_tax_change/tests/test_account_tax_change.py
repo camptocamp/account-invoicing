@@ -1,6 +1,7 @@
 # Copyright 2023 Camptocamp SA
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl)
 
+from odoo.exceptions import UserError
 from odoo.tests import tagged
 
 from .common import AccountTaxChangeCommon
@@ -30,3 +31,17 @@ class TestAccountTaxChange(AccountTaxChangeCommon):
         new_amount_tax = invoice.amount_tax
         self.assertEqual(old_taxes, new_taxes, self.tax_sale_b)
         self.assertEqual(old_amount_tax, new_amount_tax)
+
+    def test_apply_tax_change_invalid_invoice(self):
+        """Run the tax change wizard on a non-elligible invoice."""
+        invoice = self.invoice_tax_a
+        invoice.state = "cancel"
+        # Adding the invoice on the wizard
+        with self.assertRaises(UserError):
+            self.apply_tax_change(self.tax_change_a2b, invoice)
+        # Or calling the wizard directly on the selected invoice
+        with self.assertRaises(UserError):
+            wiz_model = self.env["account.move.apply.tax.change"]
+            wiz_model.with_context(
+                active_model=invoice._name, active_ids=invoice.ids
+            ).default_get(list(invoice._fields))
