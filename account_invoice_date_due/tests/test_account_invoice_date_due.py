@@ -14,7 +14,6 @@ class TestAccountInvoiceDateDue(common.TransactionCase):
         cls.env = cls.env(
             context=dict(cls.env.context, tracking_disable=True, no_reset_password=True)
         )
-        # Create new user allowed to change invoice due date
         group = cls.env.ref("account_invoice_date_due.allow_to_change_due_date")
         acc_group = cls.env.ref("account.group_account_manager")
         # Loose dependency on stock to avoid perm issues.
@@ -41,35 +40,26 @@ class TestAccountInvoiceDateDue(common.TransactionCase):
                 "groups_id": [(6, 0, (acc_group + stock_group).ids)],
             }
         )
-        account100 = cls.env["account.account"].create(
-            {
-                "code": "100",
-                "name": "Account 100",
-                "user_type_id": cls.env.ref("account.data_account_type_receivable").id,
-                "reconcile": True,
-            }
-        )
         account300 = cls.env["account.account"].create(
             {
                 "code": "300",
                 "name": "Account 300",
-                "user_type_id": cls.env.ref(
-                    "account.data_account_type_other_income"
-                ).id,
+                "account_type": "income",
             }
         )
-        move_form = Form(cls.env["account.move"])
-        move_form.date = fields.Date.today()
+        move_form = Form(
+            cls.env["account.move"].with_context(default_move_type="out_invoice")
+        )  # entry is already the default
+        move_form.invoice_date = fields.Date.today()
+        move_form.partner_id = (
+            cls.env["res.partner"].create({"name": "test partner"}).id
+        )
         with move_form.invoice_line_ids.new() as line_form:
             line_form.name = "move test"
-            line_form.debit = 0.0
-            line_form.credit = 1000.0
             line_form.account_id = account300
-        with move_form.invoice_line_ids.new() as line_form:
-            line_form.name = "move test"
-            line_form.debit = 1000.0
-            line_form.credit = 0.0
-            line_form.account_id = account100
+            line_form.price_unit = 1000.0
+            line_form.quantity = 1.0
+            line_form.tax_ids.clear()
         cls.move = move_form.save()
 
     def _compare_records(self, rec1, rec2, ignore=None):
@@ -119,7 +109,8 @@ class TestAccountInvoiceDateDue(common.TransactionCase):
                 self.move.line_ids.filtered(
                     lambda l: fields.Date.to_string(l.date_maturity)
                     == twenty_days_from_now
-                    and l.account_id.user_type_id.type in ("receivable", "payable")
+                    and l.account_id.account_type
+                    in ("asset_receivable", "liability_payable")
                 )
             ),
             1,
@@ -156,7 +147,8 @@ class TestAccountInvoiceDateDue(common.TransactionCase):
                 self.move.line_ids.filtered(
                     lambda l: fields.Date.to_string(l.date_maturity)
                     == twenty_days_from_now
-                    and l.account_id.user_type_id.type in ("receivable", "payable")
+                    and l.account_id.account_type
+                    in ("asset_receivable", "liability_payable")
                 )
             ),
             1,

@@ -39,8 +39,8 @@ class AccountMove(models.Model):
         # that correspont to the receivable/payable account
         if "invoice_date_due" in vals and self.state == "posted":
             payment_term_lines = self.line_ids.filtered(
-                lambda line: line.account_id.user_type_id.type
-                in ("receivable", "payable")
+                lambda line: line.account_id.account_type
+                in ("asset_receivable", "liability_payable")
             )
             payment_term_lines.write({"date_maturity": vals["invoice_date_due"]})
         return res
