@@ -89,42 +89,55 @@ class AccountMove(models.Model):
         for inv_line in _self.invoice_line_ids.filtered(
             lambda l: l.display_type not in ["line_section", "line_note"]
         ):
-            for key in taxes_keys:
-                if key == tuple(inv_line.tax_ids.ids):
-                    break
-            else:
-                taxes_keys[tuple(inv_line.tax_ids.ids)] = True
+            if not inv_line.product_id or inv_line.product_id.apply_global_discount:
+                for key in taxes_keys:
+                    if key == tuple(inv_line.tax_ids.ids):
+                        break
+                else:
+                    taxes_keys[tuple(inv_line.tax_ids.ids)] = True
         # Reset previous global discounts
         self.invoice_global_discount_ids -= self.invoice_global_discount_ids
         model = "account.invoice.global.discount"
         create_method = in_draft_mode and self.env[model].new or self.env[model].create
         for tax_line in _self.line_ids.filtered("tax_line_id"):
-            key = []
-            to_create = True
-            for key in taxes_keys:
-                if tax_line.tax_line_id.id in key:
-                    to_create = taxes_keys[key]
-                    taxes_keys[key] = False  # mark for not duplicating
-                    break  # we leave in key variable the proper taxes value
-            if not to_create:
-                continue
-            base = tax_line.base_before_global_discounts or tax_line.tax_base_amount
-            for global_discount in self.global_discount_ids:
-                vals = self._prepare_global_discount_vals(global_discount, base, key)
-                create_method(vals)
-                base = vals["base_discounted"]
-        # Check all moves with defined taxes to check if there's any discount not
-        # created (tax amount is zero and only one tax is applied)
-        for line in _self.line_ids.filtered("tax_ids"):
-            key = tuple(line.tax_ids.ids)
-            if taxes_keys.get(key):
-                base = line.price_subtotal
+            if not tax_line.product_id or tax_line.product_id.apply_global_discount:
+                key = []
+                to_create = True
+                for key in taxes_keys:
+                    if tax_line.tax_line_id.id in key:
+                        to_create = taxes_keys[key]
+                        taxes_keys[key] = False  # mark for not duplicating
+                        break  # we leave in key variable the proper taxes value
+                if not to_create:
+                    continue
+                base = tax_line.base_before_global_discounts or tax_line.tax_base_amount
                 for global_discount in self.global_discount_ids:
                     vals = self._prepare_global_discount_vals(
                         global_discount, base, key
                     )
                     create_method(vals)
                     base = vals["base_discounted"]
+        _self._set_global_discounts_by_zero_tax(taxes_keys, create_method)
+
+    def _set_global_discounts_by_zero_tax(self, taxes_keys, create_method):
+        # Check all moves with defined taxes to check if there's any discount not
+        # created (tax amount is zero and only one tax is applied)
+        base_total = 0
+        zero_taxes = self.env["account.tax"]
+        for line in self.line_ids.filtered("tax_ids"):
+            if not line.product_id or line.product_id.apply_global_discount:
+                key = tuple(line.tax_ids.ids)
+                if taxes_keys.get(key):
+                    base_total += line.price_subtotal
+                    zero_taxes |= line.tax_ids
+        for global_discount in self.global_discount_ids:
+            if not base_total:
+                break
+            vals = self._prepare_global_discount_vals(
+                global_discount, base_total, zero_taxes.ids
+            )
+            create_method(vals)
+            base_total = vals["base_discounted"]
 
     def _recompute_global_discount_lines(self):
         """Append global discounts move lines.
