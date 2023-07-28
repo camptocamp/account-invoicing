@@ -9,7 +9,7 @@
     "author": "Camptocamp, " "Odoo Community Association (OCA)",
     "license": "LGPL-3",
     "website": "https://github.com/OCA/account-invoicing",
-    "depends": ["account"],
+    "depends": ["account", "l10n_generic_coa"],
     "data": [
         "security/ir.model.access.csv",
         "views/account_tax_change.xml",
