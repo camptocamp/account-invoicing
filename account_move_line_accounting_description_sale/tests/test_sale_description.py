@@ -1,10 +1,12 @@
 # Copyright 2021 Camptocamp SA
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl.html)
 
-from odoo.tests.common import SavepointCase
+from odoo.tests import tagged
+from odoo.tests.common import TransactionCase
 
 
-class TestSaleDescription(SavepointCase):
+@tagged("post_install", "-at_install")
+class TestSaleDescription(TransactionCase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
