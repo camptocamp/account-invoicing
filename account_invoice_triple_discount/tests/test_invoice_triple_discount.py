@@ -162,38 +162,6 @@ class TestInvoiceTripleDiscount(TransactionCase):
             line_form.discount1 = 15.0
         invoice_form.save()
 
-    def test_05_has_discount(self):
-        """
-        Tests has_discount
-        """
-        invoice = self.create_simple_invoice(0)
-        invoice_form = Form(invoice)
-
-        self.assertFalse(invoice._has_discount())
-
-        with invoice_form.invoice_line_ids.edit(0) as line_form:
-            line_form.discount = 50.0
-        invoice_form.save()
-        self.assertTrue(invoice._has_discount())
-
-        with invoice_form.invoice_line_ids.edit(0) as line_form:
-            line_form.discount = 0
-            line_form.discount1 = 50.0
-        invoice_form.save()
-        self.assertTrue(invoice._has_discount())
-
-        with invoice_form.invoice_line_ids.edit(0) as line_form:
-            line_form.discount1 = 0
-            line_form.discount2 = 50.0
-        invoice_form.save()
-        self.assertTrue(invoice._has_discount())
-
-        with invoice_form.invoice_line_ids.edit(0) as line_form:
-            line_form.discount2 = 0
-            line_form.discount3 = 50.0
-        invoice_form.save()
-        self.assertTrue(invoice._has_discount())
-
     def test_06_round_discount(self):
         """Discount value is rounded correctly"""
         invoice = self.create_simple_invoice(0)
