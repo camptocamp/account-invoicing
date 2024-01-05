@@ -12,15 +12,11 @@ class AccountMove(models.Model):
 
     def _has_discount(self):
         self.ensure_one()
-        return any(
-            [
-                line._compute_aggregated_discount(line.discount) > 0
-                for line in self.invoice_line_ids
-            ]
-        )
+        return any([line.discount > 0 for line in self.invoice_line_ids])
 
     @api.model
     def _field_will_change(self, record, vals, field_name):
+        # TODO: Check if still needed?
         result = super()._field_will_change(record, vals, field_name)
         is_discount_field = (
             record._name == self.line_ids._name and field_name == "discount"
