@@ -9,6 +9,9 @@
     "website": "https://github.com/OCA/account-invoicing",
     "license": "AGPL-3",
     "depends": ["account", "base_global_discount"],
+    "excludes": [
+        "account_invoice_triple_discount",
+    ],
     "data": [
         "security/ir.model.access.csv",
         "security/security.xml",
