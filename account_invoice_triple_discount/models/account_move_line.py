@@ -44,6 +44,13 @@ class AccountMoveLine(models.Model):
             line.discount2 = 0
             line.discount3 = 0
 
+    @api.model_create_multi
+    def create(self, vals_list):
+        for vals in vals_list:
+            if vals.get("discount") and not vals.get("discount1"):
+                vals["discount1"] = vals.pop("discount")
+        return super().create(vals_list)
+
     def _get_aggregated_multiple_discounts(self, discounts):
         """
         Returns the aggregate discount corresponding to any number of discounts.
