@@ -16,7 +16,6 @@ class AccountMoveLine(models.Model):
         compute="_compute_discount",
         store=True,
         readonly=True,
-        inverse="_inverse_discount",
     )
     discount1 = fields.Float(
         string="Discount 1 (%)",
@@ -37,12 +36,6 @@ class AccountMoveLine(models.Model):
             line.discount = line._get_aggregated_multiple_discounts(
                 [line[x] for x in line._get_multiple_discount_field_names()]
             )
-
-    def _inverse_discount(self):
-        for line in self:
-            line.discount1 = line.discount
-            line.discount2 = 0
-            line.discount3 = 0
 
     @api.model_create_multi
     def create(self, vals_list):
