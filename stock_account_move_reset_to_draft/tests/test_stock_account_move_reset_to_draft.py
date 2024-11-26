@@ -37,9 +37,7 @@ class TestStockAccountMoveResetToDraft(BaseCommon):
             line_form.taxes_id.clear()
         order = order_form.save()
         order.button_confirm()
-        res = order.picking_ids.button_validate()
-        wizard = self.env[res["res_model"]].with_context(**res["context"]).create({})
-        wizard.process()
+        order.picking_ids.button_validate()
         self.assertEqual(order.picking_ids.state, "done")
         res_invoice = order.action_create_invoice()
         invoice = self.env[res_invoice["res_model"]].browse(res_invoice["res_id"])
@@ -107,15 +105,13 @@ class TestStockAccountMoveResetToDraft(BaseCommon):
         order.button_confirm()
         # Receive 1 pc and create a backorder
         picking = order.picking_ids
-        picking.move_ids_without_package.quantity_done = 1
+        picking.move_ids_without_package.quantity = 1
         res = picking.button_validate()
         wizard = self.env[res["res_model"]].with_context(**res["context"]).create({})
         wizard.process()
         # Receive 1 pc
         extra_picking = order.picking_ids - picking
-        res = extra_picking.button_validate()
-        wizard = self.env[res["res_model"]].with_context(**res["context"]).create({})
-        wizard.process()
+        extra_picking.button_validate()
         # Create a bill for 2 pcs at EUR12 and post
         res_invoice = order.action_create_invoice()
         invoice = self.env[res_invoice["res_model"]].browse(res_invoice["res_id"])
