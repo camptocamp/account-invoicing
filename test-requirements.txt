@@ -1,0 +1,2 @@
+odoo-addon-base_partition @ git+https://github.com/OCA/server-tools.git@refs/pull/3077/head#subdirectory=base_partition
+odoo-addon-partner_invoicing_mode @ git+https://github.com/OCA/account-invoicing.git@refs/pull/1833/head#subdirectory=partner_invoicing_mode
