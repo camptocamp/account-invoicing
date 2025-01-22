@@ -28,6 +28,14 @@
                         />
                         <field name="invoice_section_name_scheme" />
                     </div>
+                    <div class="row">
+                        <label
+                            for="invoice_section_treshold"
+                            class="col-lg-4 o_light_label"
+                            string="When to create sections"
+                        />
+                        <field name="invoice_section_treshold" />
+                    </div>
                 </setting>
             </xpath>
         </field>

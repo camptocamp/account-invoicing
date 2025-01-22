@@ -20,7 +20,7 @@ class SaleOrder(models.Model):
         for invoice in invoice_ids:
             if (
                 len(invoice.line_ids.mapped(invoice.line_ids._get_section_grouping()))
-                == 1
+                == int(invoice.company_id.invoice_section_treshold)
             ):
                 continue
             sequence = 10

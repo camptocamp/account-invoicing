@@ -21,3 +21,13 @@ class ResCompany(models.Model):
         default="sale_order",
         required=True,
     )
+
+    invoice_section_treshold = fields.Selection(
+        [
+            ("1", "Create section if multiple sale orders are selected"),
+            ("-1", "Always Create section"),
+        ],
+        help="Defines when to create sections",
+        default="1",
+        required=True,
+    )

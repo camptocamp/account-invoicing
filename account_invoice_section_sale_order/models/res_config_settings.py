@@ -16,3 +16,9 @@ class ResConfigSettings(models.TransientModel):
         readonly=False,
         required=True,
     )
+
+    invoice_section_treshold = fields.Selection(
+        related="company_id.invoice_section_treshold",
+        readonly=False,
+        required=True,
+    )
