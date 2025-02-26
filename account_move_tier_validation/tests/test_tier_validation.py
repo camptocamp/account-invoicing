@@ -4,17 +4,40 @@
 from odoo import fields
 from odoo.exceptions import ValidationError
 from odoo.tests import Form
-from odoo.tests.common import TransactionCase, tagged
+from odoo.tests.common import tagged
 
-from odoo.addons.base.tests.common import DISABLED_MAIL_CONTEXT
+from odoo.addons.base.tests.common import BaseCommon
 
 
 @tagged("post_install", "-at_install")
-class TestAccountTierValidation(TransactionCase):
+class TestAccountTierValidation(BaseCommon):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
-        cls.env = cls.env(context=dict(cls.env.context, **DISABLED_MAIL_CONTEXT))
+
+        cls.group_system = cls.env.ref("base.group_system")
+        cls.group_account_manager = cls.env.ref("account.group_account_manager")
+
+        cls.test_user_1 = cls.env["res.users"].create(
+            {
+                "name": "John",
+                "login": "test1",
+                "email": "john@test.com",
+                "groups_id": [
+                    (6, 0, [cls.group_system.id, cls.group_account_manager.id])
+                ],
+            }
+        )
+        cls.test_user_2 = cls.env["res.users"].create(
+            {
+                "name": "Mike",
+                "login": "test2",
+                "email": "mike@test.com",
+                "groups_id": [
+                    (6, 0, [cls.group_system.id, cls.group_account_manager.id])
+                ],
+            }
+        )
 
     def test_01_tier_definition_models(self):
         res = self.env["tier.definition"]._get_tier_validation_model_names()
@@ -37,26 +60,6 @@ class TestAccountTierValidation(TransactionCase):
                 self.assertTrue(form.hide_post_button)
 
     def test_03_move_post(self):
-        group_ids = [
-            self.env.ref("base.group_system").id,
-            self.env.ref("account.group_account_manager").id,
-        ]
-        self.test_user_1 = self.env["res.users"].create(
-            {
-                "name": "John",
-                "login": "test1",
-                "email": "john@test.com",
-                "groups_id": [(6, 0, group_ids)],
-            }
-        )
-        self.test_user_2 = self.env["res.users"].create(
-            {
-                "name": "Mike",
-                "login": "test2",
-                "email": "mike@test.com",
-                "groups_id": [(6, 0, group_ids)],
-            }
-        )
         self.env["tier.definition"].create(
             {
                 "model_id": self.env["ir.model"]
@@ -66,25 +69,27 @@ class TestAccountTierValidation(TransactionCase):
                 "reviewer_id": self.test_user_1.id,
             }
         )
+
         partner = self.env["res.partner"].create({"name": "Test Partner"})
         product = self.env["product.product"].create({"name": "Test product"})
+
         invoice = self.env["account.move"].create(
             {
                 "move_type": "out_invoice",
                 "partner_id": partner.id,
-                "invoice_date_due": fields.Date.from_string("2024-01-01"),
+                "invoice_date_due": fields.Date.to_date("2024-01-01"),
                 "invoice_line_ids": [
                     (0, 0, {"product_id": product.id, "quantity": 1, "price_unit": 30})
                 ],
             }
         )
-        invoice.with_user(self.test_user_2.id).request_validation()
-        invoice = invoice.with_user(self.test_user_1.id)
-        invoice.invalidate_model()
-        invoice.validate_tier()
+        reviews = invoice.with_user(self.test_user_2.id).request_validation()
+        self.assertTrue(reviews)
         with self.assertRaisesRegex(
-            ValidationError, self.env._("You are not allowed to write those fields")
+            ValidationError, "This action needs to be validated for at least one record"
         ):
-            invoice._post()
-        # Calls _post method by passing context skip_validation_check set to True
+            invoice.action_post()
+        invoice = invoice.with_user(self.test_user_1.id)
+        invoice.validate_tier()
         invoice.action_post()
+        self.assertEqual(invoice.state, "posted")
