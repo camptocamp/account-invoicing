@@ -48,7 +48,7 @@ class TestInvoiceRefundLine(AccountTestInvoicingCommon):
             self.in_invoice.invoice_line_ids,
         )
         line = self.in_invoice.invoice_line_ids[0]
-        reversal.write({"refund_method": "refund_lines", "line_ids": [(4, line.id)]})
+        reversal.write({"refund_lines": True, "line_ids": [(4, line.id)]})
         action = reversal.reverse_moves()
         refund = self.env[action["res_model"]].browse(action["res_id"])
         self.assertTrue(refund)
@@ -102,7 +102,7 @@ class TestInvoiceRefundLine(AccountTestInvoicingCommon):
             self.out_invoice.invoice_line_ids,
         )
         line = self.out_invoice.invoice_line_ids[0]
-        reversal.write({"refund_method": "refund_lines", "line_ids": [(4, line.id)]})
+        reversal.write({"refund_lines": True, "line_ids": [(4, line.id)]})
         action = reversal.reverse_moves()
         refund = self.env[action["res_model"]].browse(action["res_id"])
         self.assertTrue(refund)

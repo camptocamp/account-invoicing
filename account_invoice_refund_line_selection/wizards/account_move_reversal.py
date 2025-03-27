@@ -1,16 +1,13 @@
 # Copyright 2019 Creu Blanca
 # License LGPL-3.0 or later (https://www.gnu.org/licenses/lgpl.html).
 
-from odoo import api, fields, models
+from odoo import Command, api, fields, models
 
 
 class AccountInvoiceRefund(models.TransientModel):
     _inherit = "account.move.reversal"
 
-    refund_method = fields.Selection(
-        selection_add=[("refund_lines", "Refund specific lines")],
-        ondelete={"refund_lines": "cascade"},
-    )
+    refund_lines = fields.Boolean()
     line_ids = fields.Many2many(
         string="Invoice lines to refund",
         comodel_name="account.move.line",
@@ -37,15 +34,13 @@ class AccountInvoiceRefund(models.TransientModel):
 
     def _prepare_default_reversal(self, move):
         res = super()._prepare_default_reversal(move)
-        if self.refund_method == "refund_lines":
+        if self.refund_lines:
             vals = res.copy()
             vals["line_ids"] = [
-                (
-                    0,
-                    0,
+                Command.create(
                     li.with_context(include_business_fields=True).copy_data(
                         {"move_id": False}
-                    )[0],
+                    )[0]
                 )
                 for li in self.line_ids
             ]
