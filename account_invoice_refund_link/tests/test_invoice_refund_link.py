@@ -101,6 +101,7 @@ class TestInvoiceRefundLink(TestInvoiceRefundLinkBase):
         refund.invoice_line_ids.write({"origin_line_id": False})
         self.assertFalse(refund.mapped("invoice_line_ids.origin_line_id"))
         post_init_hook(self.env.cr, None)
+        refund.invalidate_cache()
         self.refund_reason = "The refund reason"
         self._test_refund_link()
 
