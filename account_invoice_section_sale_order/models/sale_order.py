@@ -21,8 +21,11 @@ class SaleOrder(models.Model):
         # for invoice lines. We use a mutable in the context because the context is an
         # immutable dictionary: this way we can update the value of the first element on
         # the list it and see the updated values in the different calls to
-        # _prepare_invoice_line
-        self = self.with_context(current_line_sequence=[10])
+        # _prepare_invoice_line.
+        # Older orders are shown first on the invoice
+        self = self.with_context(current_line_sequence=[10]).sorted(
+            key=lambda order: order.date_order
+        )
         invoices = super()._create_invoices(grouped=grouped, final=final, date=date)
         for invoice in invoices.sudo():
             if invoice.line_ids and (
