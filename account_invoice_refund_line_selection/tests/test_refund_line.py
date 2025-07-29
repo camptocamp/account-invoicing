@@ -149,6 +149,11 @@ class TestInvoiceRefundLine(AccountTestInvoicingCommon):
         wiz_reversal_form.journal_id = self.out_invoice.journal_id
         wiz_reversal_form.refund_lines = True
         wiz_reversal_form.line_ids = line
+        # check if module account_invoice_refund_reason is installed
+        if hasattr(self.env["account.move"], "reason_id"):
+            wiz_reversal_form.reason_id = self.env["account.move.refund.reason"].search(
+                [], limit=1
+            )
         wiz_id = wiz_reversal_form.save()
 
         self._generic_test_after_refund(self.out_invoice, wiz_id.reverse_moves(), True)
