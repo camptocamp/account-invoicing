@@ -5,6 +5,7 @@ from odoo import Command, fields
 from odoo.exceptions import ValidationError
 from odoo.tests import Form
 from odoo.tests.common import new_test_user, tagged
+from odoo.tools.misc import mute_logger
 
 from odoo.addons.base.tests.common import BaseCommon
 
@@ -56,6 +57,30 @@ class TestAccountTierValidation(BaseCommon):
             if default_layout:
                 cls.company.external_report_layout_id = default_layout.id
 
+    def _prepare_tier_definition_and_move(self, move_type="out_invoice"):
+        tier_definition = self.env["tier.definition"].create(
+            {
+                "model_id": self.account_move_model.id,
+                "definition_domain": f"[('move_type', '=', '{move_type}')]",
+                "reviewer_id": self.test_user_1.id,
+            }
+        )
+        partner = self.env["res.partner"].create({"name": "Test Partner"})
+        product = self.env["product.product"].create({"name": "Test product"})
+        move = self.env["account.move"].create(
+            {
+                "move_type": move_type,
+                "partner_id": partner.id,
+                "invoice_date_due": fields.Date.to_date("2024-01-01"),
+                "invoice_line_ids": [
+                    Command.create(
+                        {"product_id": product.id, "quantity": 1, "price_unit": 30}
+                    )
+                ],
+            }
+        )
+        return tier_definition, move
+
     def test_01_tier_definition_models(self):
         res = self.env["tier.definition"]._get_tier_validation_model_names()
         self.assertIn("account.move", res)
@@ -75,27 +100,7 @@ class TestAccountTierValidation(BaseCommon):
                 self.assertTrue(form.hide_post_button)
 
     def test_03_move_post(self):
-        self.env["tier.definition"].create(
-            {
-                "model_id": self.account_move_model.id,
-                "definition_domain": "[('move_type', '=', 'out_invoice')]",
-                "reviewer_id": self.test_user_1.id,
-            }
-        )
-        partner = self.env["res.partner"].create({"name": "Test Partner"})
-        product = self.env["product.product"].create({"name": "Test product"})
-        invoice = self.env["account.move"].create(
-            {
-                "move_type": "out_invoice",
-                "partner_id": partner.id,
-                "invoice_date_due": fields.Date.to_date("2024-01-01"),
-                "invoice_line_ids": [
-                    Command.create(
-                        {"product_id": product.id, "quantity": 1, "price_unit": 30}
-                    )
-                ],
-            }
-        )
+        __, invoice = self._prepare_tier_definition_and_move()
         invoice.with_user(self.test_user_2.id).request_validation()
         invoice = invoice.with_user(self.test_user_1.id)
         invoice.invalidate_model()
@@ -138,3 +143,21 @@ class TestAccountTierValidation(BaseCommon):
                 "Could not find a 'action_send_and_print' "
                 "action on the account.move.send.wizard."
             )
+
+    def test_04_move_reset_to_draft(self):
+        """Test we can revert a posted move back to draft"""
+        __, vendor_bill = self._prepare_tier_definition_and_move("in_invoice")
+        # We add the invoice date, else the posting action fails, but we do it before
+        # requesting validation, else the write itself fails
+        vendor_bill.invoice_date = fields.Date.context_today(vendor_bill)
+        vendor_bill.with_user(self.test_user_2.id).request_validation()
+        vendor_bill = vendor_bill.with_user(self.test_user_1.id)
+        vendor_bill.invalidate_model()
+        vendor_bill.validate_tier()
+        vendor_bill.action_post()
+        self.assertEqual(len(vendor_bill.review_ids), 1)
+        self.assertEqual(vendor_bill.state, "posted")
+        with mute_logger("odoo.models.unlink"):
+            vendor_bill.button_draft()
+        self.assertEqual(len(vendor_bill.review_ids), 0)
+        self.assertEqual(vendor_bill.state, "draft")
