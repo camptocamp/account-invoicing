@@ -3,12 +3,13 @@
 from unittest import mock
 
 from odoo.exceptions import UserError
+from odoo.fields import Domain
 
 from .common import Common
 
 SECTION_GROUPING_FUNCTION = "odoo.addons.account_invoice_section_sale_order.models.account_move.AccountMoveLine._get_section_grouping"  # noqa
 SECTION_NAME_FUNCTION = (
-    "odoo.addons.base.models.res_users.Users._get_invoice_section_name"
+    "odoo.addons.base.models.res_users.ResUsers._get_invoice_section_name"
 )
 
 
@@ -42,7 +43,9 @@ class TestInvoiceGroupBySaleOrder(Common):
 
     def test_create_invoice_with_default_journal(self):
         """Using a specific journal for the invoice should not be broken"""
-        journal = self.env["account.journal"].search([("type", "=", "sale")], limit=1)
+        journal = self.env["account.journal"].search(
+            Domain("type", "=", "sale"), limit=1
+        )
         (self.order1_p1 + self.order2_p1).with_context(
             default_journal_id=journal.id
         )._create_invoices()
@@ -58,6 +61,15 @@ class TestInvoiceGroupBySaleOrder(Common):
             lambda r: r.display_type == "line_section"
         )
         self.assertEqual(len(line_sections), 0)
+
+    def test_custom_name_scheme_literal(self):
+        """Check that a quoted literal can be used as section name."""
+        self.partner_1.invoice_section_name_scheme = "'Group'"
+        invoice = (self.order1_p1 + self.order2_p1)._create_invoices()
+        sections = invoice.invoice_line_ids.filtered(
+            lambda line: line.display_type == "line_section"
+        ).sorted("sequence")
+        self.assertEqual(sections.mapped("name"), ["Group", "Group"])
 
     def test_unknown_invoice_section_grouping_value(self):
         """Check an error is raised when invoice_section_grouping value is
@@ -79,11 +91,10 @@ class TestInvoiceGroupBySaleOrder(Common):
         By mocking account.move.line_get_section_grouping and creating
         res.users.get_invoice_section_name, this test ensures custom grouping
         is possible by redefining these functions"""
-        demo_user = self.env.ref("base.user_demo")
-        admin_user = self.env.ref("base.partner_admin")
+        admin_user = self.env.ref("base.user_admin")
         orders = self.order1_p1 + self.order2_p1
         orders.write({"user_id": admin_user.id})
-        sale_order_3 = self.order1_p1.copy({"user_id": demo_user.id})
+        sale_order_3 = self.order1_p1.copy({"user_id": self.user_demo.id})
         sale_order_3.order_line[0].name = "order 3 line 1"
         sale_order_3.order_line[1].name = "order 3 line 2"
         sale_order_3.action_confirm()

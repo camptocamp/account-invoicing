@@ -10,5 +10,5 @@ class ResPartner(models.Model):
         help="This is the name of the sections on invoices when generated from "
         "sales orders. Keep empty to use default. You can use a python "
         "expression with the 'object' (representing sale order) and 'time'"
-        " variables."
+        " variables. For a fixed text, quote it, for example 'Group'."
     )
