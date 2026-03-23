@@ -3,3 +3,4 @@
 # (X509_V_FLAG_CB_ISSUER_CHECK, X509_V_FLAG_NOTIFY_POLICY) removed in 37.0.0.
 cryptography<37
 freezegun
+odoo-addon-account-payment-partner @ git+https://github.com/OCA/bank-payment@refs/pull/1418/head#subdirectory=setup/account_payment_partner
