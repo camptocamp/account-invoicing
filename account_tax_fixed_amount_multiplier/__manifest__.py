@@ -10,6 +10,7 @@
     "maintainers": ["ivantodorovich"],
     "website": "https://github.com/OCA/account-invoicing",
     "license": "AGPL-3",
+    "development_status": "Alpha",
     "category": "Accounting/Accounting",
     "depends": [
         "account",

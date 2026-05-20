@@ -20,22 +20,17 @@ patch(accountTaxHelpers, {
      * [!] Mirror of the same method in account_tax.py.
      * PLZ KEEP BOTH METHODS CONSISTENT WITH EACH OTHERS.
      */
-    _get_fixed_amount_quantity_ratio(tax, evaluation_context) {
-        const quantity = evaluation_context.quantity;
-        if (!quantity || tax.fixed_amount_multiplier === "quantity") {
+    _get_fixed_amount_quantity(tax, evaluation_context) {
+        if (tax.fixed_amount_multiplier === "none") {
             return 1.0;
-        } else if (tax.fixed_amount_multiplier === "none") {
-            return 1.0 / quantity;
         } else if (tax.fixed_amount_multiplier === "product_quantity") {
-            return (
-                this._get_fixed_amount_product_quantity(evaluation_context) / quantity
-            );
+            return this._get_fixed_amount_product_quantity(evaluation_context);
         } else if (tax.fixed_amount_multiplier === "product_weight") {
-            const ratio =
-                this._get_fixed_amount_product_quantity(evaluation_context) / quantity;
-            return ratio * (evaluation_context.product.weight || 0.0);
+            const quantity =
+                this._get_fixed_amount_product_quantity(evaluation_context);
+            return quantity * (evaluation_context.product.weight || 0.0);
         }
-        return 1.0;
+        return evaluation_context.quantity;
     },
 
     /**
@@ -43,14 +38,19 @@ patch(accountTaxHelpers, {
      * PLZ KEEP BOTH METHODS CONSISTENT WITH EACH OTHERS.
      */
     eval_tax_amount_fixed_amount(tax, batch, raw_base, evaluation_context) {
-        const res = super.eval_tax_amount_fixed_amount(...arguments);
-        if (tax.amount_type === "fixed") {
-            const ratio = this._get_fixed_amount_quantity_ratio(
-                tax,
-                evaluation_context
-            );
-            return res * ratio;
+        if (tax.amount_type === "fixed" && tax.fixed_amount_multiplier !== "quantity") {
+            const sign = evaluation_context.price_unit < 0.0 ? -1 : 1;
+            const quantity = this._get_fixed_amount_quantity(tax, evaluation_context);
+            let amount = sign * quantity * tax.amount;
+            // ``account_tax_fixed_amount_currency`` module introduces ``currency_id``
+            // and the conversion hook.
+            // Use currency conversion feature when present in registry without
+            // direct ``account_tax_fixed_amount_currency`` module dependency.
+            if (tax.currency_id && this._eval_tax_amount_convert_currency) {
+                amount = this._eval_tax_amount_convert_currency(tax, amount);
+            }
+            return amount;
         }
-        return res;
+        return super.eval_tax_amount_fixed_amount(...arguments);
     },
 });
