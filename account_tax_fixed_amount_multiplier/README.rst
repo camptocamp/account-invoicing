@@ -14,9 +14,9 @@ Tax Fixed Amount Multiplier
    !! source digest: sha256:77e89e7b2604852b61c001bb3f86d323441dfb167ace5c7180858c82a16d6823
    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-.. |badge1| image:: https://img.shields.io/badge/maturity-Beta-yellow.png
+.. |badge1| image:: https://img.shields.io/badge/maturity-Alpha-red.png
     :target: https://odoo-community.org/page/development-status
-    :alt: Beta
+    :alt: Alpha
 .. |badge2| image:: https://img.shields.io/badge/license-AGPL--3-blue.png
     :target: http://www.gnu.org/licenses/agpl-3.0-standalone.html
     :alt: License: AGPL-3
@@ -50,6 +50,11 @@ This module allows choosing between four multiplier modes:
 - **Product Weight**: multiplied by the total weight of the products on
   the line (product quantity × product weight). Useful for weight-based
   fees such as environmental levies.
+
+.. IMPORTANT::
+   This is an alpha version, the data model and design can change at any time without warning.
+   Only for development or testing purpose, do not use in production.
+   `More details on development status <https://odoo-community.org/page/development-status>`_
 
 **Table of contents**
 

@@ -35,35 +35,32 @@ class AccountTax(models.Model):
         product_uom_factor = evaluation_context["product"].get("uom_factor", 1.0) or 1.0
         return quantity * uom_factor / product_uom_factor
 
-    def _get_fixed_amount_quantity_ratio(self, evaluation_context):
-        """Return the ratio between the effective quantity and the line quantity.
+    def _get_fixed_amount_quantity(self, evaluation_context):
+        """Return the quantity to multiply by the fixed tax amount.
 
-        This ratio is applied to the standard fixed tax result (which already
-        uses the line quantity) to adjust for the selected multiplier mode.
+        This hook lets downstream modules extend the fixed tax multiplier modes.
+
+        :param dict evaluation_context: Tax computation context.
+        :return: Quantity used as multiplier for the fixed tax amount.
         """
         self.ensure_one()
-        quantity = evaluation_context["quantity"]
-        if not quantity or self.fixed_amount_multiplier == "quantity":
+        if self.fixed_amount_multiplier == "none":
             return 1.0
-        elif self.fixed_amount_multiplier == "none":
-            return 1.0 / quantity
         elif self.fixed_amount_multiplier == "product_quantity":
-            return (
-                self._get_fixed_amount_product_quantity(evaluation_context) / quantity
-            )
+            return self._get_fixed_amount_product_quantity(evaluation_context)
         elif self.fixed_amount_multiplier == "product_weight":
-            ratio = (
-                self._get_fixed_amount_product_quantity(evaluation_context) / quantity
-            )
-            return ratio * evaluation_context["product"].get("weight", 0.0)
-        return 1.0
+            quantity = self._get_fixed_amount_product_quantity(evaluation_context)
+            return quantity * evaluation_context["product"].get("weight", 0.0)
+        return evaluation_context["quantity"]
 
     def _eval_tax_amount_fixed_amount(self, batch, raw_base, evaluation_context):
-        res = super()._eval_tax_amount_fixed_amount(batch, raw_base, evaluation_context)
-        if self.amount_type == "fixed":
-            ratio = self._get_fixed_amount_quantity_ratio(evaluation_context)
-            return res * ratio
-        return res
+        if self.amount_type == "fixed" and self.fixed_amount_multiplier != "quantity":
+            sign = -1 if evaluation_context["price_unit"] < 0.0 else 1
+            quantity = self._get_fixed_amount_quantity(evaluation_context)
+            return sign * quantity * self.amount
+        return super()._eval_tax_amount_fixed_amount(
+            batch, raw_base, evaluation_context
+        )
 
     def _eval_taxes_computation_prepare_product_fields(self):
         fields = super()._eval_taxes_computation_prepare_product_fields()
