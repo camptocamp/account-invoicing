@@ -82,6 +82,18 @@ class TestFixedAmountMultiplier(AccountTestInvoicingCommon):
             self._get_tax_amount(invoice, self.tax_multiplier_none), 5.0, places=2
         )
 
+    def test_multiplier_none_zero_quantity(self):
+        """Test no multiplier applies the fixed amount once on zero quantity."""
+        invoice = self._create_invoice_one_line(
+            product_id=self.product,
+            price_unit=100.0,
+            quantity=0.0,
+            tax_ids=self.tax_multiplier_none,
+        )
+        self.assertAlmostEqual(
+            self._get_tax_amount(invoice, self.tax_multiplier_none), 5.0, places=2
+        )
+
     # -------------------------------------------------------------------------
     # Multiplier = 'quantity'
     # -------------------------------------------------------------------------

@@ -21,6 +21,31 @@ class TestFixedAmountMultiplierJs(TestTaxCommon):
         values["fixed_amount_multiplier"] = tax.fixed_amount_multiplier
         return values
 
+    def test_multiplier_none_zero_quantity(self):
+        """Test no multiplier applies the fixed amount once on zero quantity."""
+        tax = self.env["account.tax"].create(
+            {
+                "name": "Fixed 5 none zero quantity",
+                "amount_type": "fixed",
+                "amount": 5.0,
+                "fixed_amount_multiplier": "none",
+                "type_tax_use": "sale",
+            }
+        )
+        self.assert_taxes_computation(
+            tax,
+            price_unit=100.0,
+            quantity=0.0,
+            expected_values={
+                "total_excluded": 0.0,
+                "total_included": 5.0,
+                "taxes_data": [
+                    (0.0, 5.0),
+                ],
+            },
+        )
+        self._run_js_tests()
+
     def test_multiplier_quantity(self):
         """Explicit quantity multiplier (default behavior) - JS parity."""
         tax = self.env["account.tax"].create(
