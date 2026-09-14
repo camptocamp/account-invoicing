@@ -15,6 +15,46 @@ class AccountMove(models.Model):
         help="Last date at which the discounted amount must be paid in order "
         "for the Early Payment Discount to be granted",
     )
+    discount_amount_currency = fields.Monetary(
+        string="Discount amount in Currency",
+        compute="_compute_discount_amounts",
+        store=True,
+        currency_field="currency_id",
+        help="Total amount to pay, in invoice currency, if the Early "
+        "Payment Discount is applied on all lines that grant one",
+    )
+    discount_balance = fields.Monetary(
+        compute="_compute_discount_amounts",
+        store=True,
+        currency_field="company_currency_id",
+        help="Total amount to pay, in company currency, if the Early "
+        "Payment Discount is applied on all lines that grant one",
+    )
+
+    @api.depends(
+        "line_ids.discount_amount_currency",
+        "line_ids.amount_currency",
+        "line_ids.discount_balance",
+        "line_ids.balance",
+    )
+    def _compute_discount_amounts(self):
+        """Sum discount-or-plain amounts of payment term lines, only when
+        at least one of them grants an Early Payment Discount"""
+        for record in self:
+            payment_lines = record.line_ids.filtered_domain(
+                [("display_type", "=", "payment_term")]
+            )
+            if any(payment_lines.mapped("discount_amount_currency")):
+                record.discount_amount_currency = sum(
+                    line.discount_amount_currency or line.amount_currency
+                    for line in payment_lines
+                )
+                record.discount_balance = sum(
+                    line.discount_balance or line.balance for line in payment_lines
+                )
+            else:
+                record.discount_amount_currency = False
+                record.discount_balance = False
 
     @api.depends("line_ids.discount_date")
     def _compute_discount_date(self):

@@ -30,6 +30,17 @@
                     optional="show"
                     invisible="payment_state in ('paid', 'in_payment', 'reversed')"
                 />
+                <field
+                    name="discount_amount_currency"
+                    string="Discount Amount"
+                    optional="show"
+                    invisible="not discount_amount_currency"
+                />
+                <field
+                    name="discount_balance"
+                    optional="hide"
+                    invisible="not discount_balance"
+                />
             </xpath>
         </field>
     </record>
