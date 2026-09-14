@@ -25,10 +25,20 @@
         <field name="arch" type="xml">
             <xpath expr="//field[@name='invoice_date_due']" position="after">
                 <field
-                    name="discount_date"
+                    name="effective_due_date"
                     widget="remaining_days"
                     optional="show"
                     invisible="payment_state in ('paid', 'in_payment', 'reversed')"
+                />
+                <field
+                    name="discount_amount_currency"
+                    optional="show"
+                    invisible="not discount_amount_currency"
+                />
+                <field
+                    name="discount_balance"
+                    optional="hide"
+                    invisible="not discount_balance"
                 />
             </xpath>
         </field>
