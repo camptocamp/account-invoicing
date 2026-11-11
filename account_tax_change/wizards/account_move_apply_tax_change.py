@@ -1,7 +1,7 @@
 # Copyright 2023 Camptocamp SA
 # License LGPL-3.0 or later (http://www.gnu.org/licenses/lgpl)
 
-from odoo import _, api, fields, models
+from odoo import Command, api, fields, models
 from odoo.exceptions import UserError
 
 
@@ -17,7 +17,7 @@ class AccountMoveApplyTaxChange(models.TransientModel):
         if active_model == "account.move":
             invoice_ids = self.env.context.get("active_ids")
             self._check_invoices(invoice_ids)
-            res["invoice_ids"] = [(6, 0, invoice_ids)]
+            res["invoice_ids"] = [Command.set(invoice_ids)]
         return res
 
     company_id = fields.Many2one(
@@ -53,11 +53,10 @@ class AccountMoveApplyTaxChange(models.TransientModel):
         )
         if invoices:
             raise UserError(
-                _(
-                    "Unable to update taxes on the following invoices:\n\n- "
-                    + "\n- ".join(invoices.mapped("name"))
-                    + "\n\nThese invoices could be already paid, posted or "
-                    "cancelled."
+                self.env._(
+                    "Unable to update taxes on the following invoices:\n\n- %s"
+                    "\n\nThese invoices could be already paid, posted or cancelled.",
+                    "\n- ".join(invoices.mapped("name")),
                 )
             )
 

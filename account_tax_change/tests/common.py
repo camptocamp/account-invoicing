@@ -1,16 +1,16 @@
 # Copyright 2023 Camptocamp SA
 # License LGPL-3.0 or later (http://www.gnu.org/licenses/lgpl)
 
-from odoo.tests.common import Form
+from odoo import Command
+from odoo.tests import Form
 
 from odoo.addons.account.tests.common import AccountTestInvoicingCommon
 
 
 class AccountTaxChangeCommon(AccountTestInvoicingCommon):
     @classmethod
-    def setUpClass(cls, chart_template_ref=None):
-        super().setUpClass(chart_template_ref=chart_template_ref)
-        cls.env = cls.env(context=dict(cls.env.context, tracking_disable=True))
+    def setUpClass(cls):
+        super().setUpClass()
         # Prepare the taxes and products
         cls.product_b.taxes_id -= cls.product_a.taxes_id
         # Set a different tax amount to ensure invoice totals are well recomputed
@@ -24,14 +24,10 @@ class AccountTaxChangeCommon(AccountTestInvoicingCommon):
                 "name": "TEST A2B",
                 "date": cls.invoice_tax_a.invoice_date,
                 "change_line_ids": [
-                    (
-                        0,
-                        0,
-                        {
-                            "tax_src_id": cls.tax_sale_a.id,
-                            "tax_dest_id": cls.tax_sale_b.id,
-                        },
-                    ),
+                    Command.create({
+                        "tax_src_id": cls.tax_sale_a.id,
+                        "tax_dest_id": cls.tax_sale_b.id,
+                    }),
                 ],
             }
         )

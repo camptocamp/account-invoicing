@@ -1,7 +1,7 @@
 # Copyright 2023 Camptocamp SA
 # License LGPL-3.0 or later (http://www.gnu.org/licenses/lgpl)
 
-from odoo import _, api, fields, models
+from odoo import api, fields, models
 from odoo.exceptions import ValidationError
 
 
@@ -25,13 +25,10 @@ class AccountTaxChange(models.Model):
         string="Mapping",
     )
 
-    _sql_constraints = [
-        (
-            "name_company_date_uniq",
-            "unique(name, company_id, date)",
-            "A tax change already exists for this company at this date.",
-        ),
-    ]
+    _name_company_date_uniq = models.Constraint(
+        "unique(name, company_id, date)",
+        "A tax change already exists for this company at this date.",
+    )
 
 
 class AccountTaxChangeLine(models.Model):
@@ -72,4 +69,4 @@ class AccountTaxChangeLine(models.Model):
             if not line.tax_src_id or not line.tax_dest_id:
                 continue
             if line.tax_src_id.type_tax_use != line.tax_dest_id.type_tax_use:
-                raise ValidationError(_("Taxes From/To have to share the same type."))
+                raise ValidationError(self.env._("Taxes From/To have to share the same type."))
