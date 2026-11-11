@@ -14,7 +14,6 @@ class AccountTaxChange(models.Model):
     date = fields.Date(required=True)
     company_id = fields.Many2one(
         comodel_name="res.company",
-        string="Company",
         required=True,
         readonly=True,
         default=lambda self: self.env.company,
@@ -69,4 +68,6 @@ class AccountTaxChangeLine(models.Model):
             if not line.tax_src_id or not line.tax_dest_id:
                 continue
             if line.tax_src_id.type_tax_use != line.tax_dest_id.type_tax_use:
-                raise ValidationError(self.env._("Taxes From/To have to share the same type."))
+                raise ValidationError(
+                    self.env._("Taxes From/To have to share the same type.")
+                )

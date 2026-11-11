@@ -24,10 +24,12 @@ class AccountTaxChangeCommon(AccountTestInvoicingCommon):
                 "name": "TEST A2B",
                 "date": cls.invoice_tax_a.invoice_date,
                 "change_line_ids": [
-                    Command.create({
-                        "tax_src_id": cls.tax_sale_a.id,
-                        "tax_dest_id": cls.tax_sale_b.id,
-                    }),
+                    Command.create(
+                        {
+                            "tax_src_id": cls.tax_sale_a.id,
+                            "tax_dest_id": cls.tax_sale_b.id,
+                        }
+                    ),
                 ],
             }
         )
