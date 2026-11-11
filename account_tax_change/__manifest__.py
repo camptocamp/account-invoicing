@@ -3,7 +3,7 @@
 
 {
     "name": "Account Tax Change",
-    "version": "17.0.1.0.0",
+    "version": "18.0.1.0.0",
     "summary": "Configure your tax changes starting from a date.",
     "category": "Accounting & Finance",
     "author": "Camptocamp, " "Odoo Community Association (OCA)",
