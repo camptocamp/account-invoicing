@@ -54,7 +54,7 @@ class AccountMoveApplyTaxChange(models.TransientModel):
                 self.env._(
                     "Unable to update taxes on the following invoices:\n\n- %s"
                     "\n\nThese invoices could be already paid, posted or cancelled.",
-                    "\n- ".join(invoices.mapped("name")),
+                    "\n- ".join(invoices.mapped("display_name")),
                 )
             )
 
